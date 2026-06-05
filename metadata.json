@@ -1,0 +1,6 @@
+{
+  "name": "Telebachillerato Mahuixtlán",
+  "description": "Sitio web oficial interactivo del TEBAEV Mahuixtlán (CCT 30ETH0627X) en Coatepec, Veracruz.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
