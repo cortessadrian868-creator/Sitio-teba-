@@ -90,19 +90,38 @@ export default function Gallery() {
     ];
 
     const savedFullGallery = localStorage.getItem('tebaev_full_gallery');
+    
+    // Helper to identify and remove any welding-related image to fulfill the user's request
+    const isWeldingItem = (item: GalleryItem) => {
+      const titleLower = (item.title || '').toLowerCase();
+      const descLower = (item.description || '').toLowerCase();
+      return (
+        titleLower.includes('soldadura') ||
+        titleLower.includes('soldar') ||
+        titleLower.includes('soldado') ||
+        titleLower.includes('welding') ||
+        descLower.includes('soldadura') ||
+        descLower.includes('soldar') ||
+        descLower.includes('soldado') ||
+        descLower.includes('welding')
+      );
+    };
+
     if (savedFullGallery) {
       try {
         const parsed = JSON.parse(savedFullGallery) as GalleryItem[];
         // Auto-heal logic: ensure official keys use active Vite imported assets in case they were stored as broken paths
-        const healed = parsed.map(item => {
-          if (item.isOfficial) {
-            const match = defaultGallery.find(dg => dg.id === item.id);
-            if (match) {
-              return { ...item, src: match.src };
+        const healed = parsed
+          .map(item => {
+            if (item.isOfficial) {
+              const match = defaultGallery.find(dg => dg.id === item.id);
+              if (match) {
+                return { ...item, src: match.src };
+              }
             }
-          }
-          return item;
-        });
+            return item;
+          })
+          .filter(item => !isWeldingItem(item));
         setItems(healed);
         localStorage.setItem('tebaev_full_gallery', JSON.stringify(healed));
       } catch (e) {
@@ -113,7 +132,7 @@ export default function Gallery() {
       if (savedUserImages) {
         try {
           const parsedUser = JSON.parse(savedUserImages) as GalleryItem[];
-          const initialMerged = [...defaultGallery, ...parsedUser];
+          const initialMerged = [...defaultGallery, ...parsedUser].filter(item => !isWeldingItem(item));
           setItems(initialMerged);
           localStorage.setItem('tebaev_full_gallery', JSON.stringify(initialMerged));
         } catch (e) {
