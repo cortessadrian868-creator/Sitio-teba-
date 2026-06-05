@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Upload, X, Image as ImageIcon, Heart, Camera, Trash2, Maximize2, 
-  FileWarning, Sprout, Landmark, GraduationCap, Check, Plus, Pencil
+  FileWarning, Sprout, Landmark, GraduationCap, Check, Plus, Pencil,
+  Download, Save, FileUp
 } from 'lucide-react';
 
 // Import images so Vite processes them into valid URLs for dev & production builds
@@ -294,6 +295,57 @@ export default function Gallery() {
     fileInputRef.current?.click();
   };
 
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Export customized gallery as JSON
+  const handleExportGallery = () => {
+    try {
+      const dataStr = JSON.stringify(items, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `galeria_tebaev_mahuixtlan_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      alert('Error al intentar exportar las fotos: ' + (e instanceof Error ? e.message : String(e)));
+    }
+  };
+
+  // Import customized gallery back from JSON
+  const handleImportGallery = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const content = event.target?.result as string;
+          const parsed = JSON.parse(content);
+          if (Array.isArray(parsed)) {
+            const isValid = parsed.every(item => item && typeof item === 'object' && 'id' in item && 'src' in item && 'title' in item);
+            if (!isValid) {
+              alert('El archivo no tiene el formato de copia de seguridad de galería correcto.');
+              return;
+            }
+            // Update and save State
+            updateGalleryState(parsed);
+            alert('¡Álbum cargado con éxito! Tus fotos y cambios han sido restaurados completamente.');
+          } else {
+            alert('El archivo de respaldo no es válido.');
+          }
+        } catch (err) {
+          alert('Hubo un error al leer el archivo. Asegúrate que sea un respaldo válido .json.');
+        }
+        if (importFileInputRef.current) importFileInputRef.current.value = '';
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const filteredItems = selectedCategory === 'all' 
     ? items 
     : selectedCategory === 'user'
@@ -423,6 +475,43 @@ export default function Gallery() {
             </div>
           </div>
 
+        </div>
+
+        {/* Persistence / Backup / Multi-device Sync tools for User Gallery */}
+        <div className="bg-gradient-to-r from-sage-light/30 to-sage-light/10 border border-sage-soft rounded-3xl p-6 sm:p-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="space-y-2 text-left max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="flex h-2.5 w-2.5 rounded-full bg-sage animate-pulse"></span>
+              <h4 className="text-sm font-bold text-pine font-mono uppercase tracking-wider">Copia de Seguridad & Sincronización del Álbum</h4>
+            </div>
+            <h3 className="text-xl font-serif font-bold text-pine">Conserva tus Fotos en el Enlace de Compartimento</h3>
+            <p className="text-xs sm:text-sm text-earthy leading-relaxed font-normal">
+              Dado que tu navegador guarda las fotos de manera segura y local (offline), al abrir el enlace compartido por primera vez verás el álbum en su estado original. 
+              <strong> ¡No te preocupes!</strong> Descarga tu copia con <strong>Exportar Álbum</strong>, abre el enlace compartido, e <strong>Impórtalo</strong> para recuperar todas tus fotos y títulos para siempre.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3.5 w-full md:w-auto shrink-0 justify-start sm:justify-center">
+            {/* Hidden Input for Importing .json */}
+            <input
+              type="file"
+              ref={importFileInputRef}
+              onChange={handleImportGallery}
+              accept=".json"
+              className="hidden"
+            />
+            <button
+              onClick={handleExportGallery}
+              className="flex items-center gap-2 px-5 py-2.5 bg-pine hover:bg-forest text-white text-xs font-bold rounded-xl shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            >
+              <Download className="h-4 w-4" /> Exportar Álbum (.json)
+            </button>
+            <button
+              onClick={() => importFileInputRef.current?.click()}
+              className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-alabaster text-pine border border-linen text-xs font-bold rounded-xl shadow-2xs hover:shadow-xs transition-all cursor-pointer"
+            >
+              <FileUp className="h-4 w-4 text-sage" /> Importar Álbum (.json)
+            </button>
+          </div>
         </div>
 
         {/* Filter Navigation and Gallery Grid */}
